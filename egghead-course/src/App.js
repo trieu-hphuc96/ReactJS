@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
+import propTypes from 'prop-types';
 import './App.css';
 
 class App extends Component {
@@ -8,9 +9,13 @@ class App extends Component {
     super();
     this.state = {
       items: [],
+
       input: '/* add your jsx here */',
       output: '',
       err: '',
+
+      red: 0,
+      blue: 0
     }
   }
 
@@ -46,6 +51,13 @@ class App extends Component {
     }
   }
 
+  updateColor(e){
+    this.setState({
+      red: ReactDOM.findDOMNode(this.refs.red.refs.inp).value,
+      blue: ReactDOM.findDOMNode(this.refs.blue.refs.inp).value
+    })
+  }
+
   render() {
     let items = this.state.items;
     if (this.state.filter) {
@@ -77,6 +89,36 @@ class App extends Component {
           <Button>button</Button>
           <hr></hr>
           <LabelHOC>label</LabelHOC>
+        </div>
+        <hr></hr>
+
+        <Buttons>
+          <button value="A">A</button>
+          <button value="B">B</button>
+          <button value="C">C</button>
+        </Buttons>
+        <hr></hr>
+
+        <div>
+          <NumInput 
+            ref="red" 
+            min={0}
+            max={255}
+            step={0.1}
+            val={this.state.red}
+            update={this.updateColor.bind(this)}
+            label="Red">
+          </NumInput>
+          <NumInput 
+            ref="blue" 
+            min={0}
+            max={255}
+            step={1}
+            val={this.state.blue}
+            update={this.updateColor.bind(this)}
+            label="Blue"
+            type="number">
+          </NumInput>
         </div>
 
         <button onClick={this.mountLifeCircle.bind(this)}>Mount</button>
@@ -174,7 +216,11 @@ class Label extends Component {
   componentWillMount(){
     console.log('label will mount');
   }
+
   render() {
+    React.Children.forEach(this.props.children, child => console.log(child))
+    let items = React.Children.map(this.props.children, child => child)
+    console.log(items);
     return(
       <label onMouseMove={this.props.update}>
         {this.props.children} - {this.props.count}
@@ -184,5 +230,68 @@ class Label extends Component {
 }
 
 const LabelHOC = HOC(Label)
+
+class Buttons extends Component {
+  constructor() {
+    super();
+    this.state = {selected: 'None'}
+  }
+
+  selectItem(selected) {
+    this.setState({selected})
+  }
+
+  render() {
+    let fn = child =>
+      React.cloneElement(child, {
+        onClick: this.selectItem.bind(this, child.props.value)
+      })
+    let items = React.Children.map(this.props.children, fn);
+    return (
+      <div>
+        <h2>You have selected: {this.state.selected}</h2>
+        {items}
+      </div>
+    )
+  }
+}
+
+class NumInput extends Component {
+  render() {
+    let label = this.props.label !== '' ?
+      <label>{this.props.label} - {this.props.val}</label> : ''
+    return (
+      <div>
+        <input ref="inp"
+          type={this.props.type}
+          min={this.props.min}
+          max={this.props.max}
+          step={this.props.step}
+          defaultValue={this.props.val}
+          onChange={this.props.update} />
+          {label}
+      </div>
+    )
+  }
+}
+
+NumInput.propTypes = {
+  min: propTypes.number,
+  max: propTypes.number,
+  step: propTypes.number,
+  val: propTypes.number,
+  label: propTypes.string,
+  update: propTypes.func.isRequired,
+  type: propTypes.oneOf(['number','type'])
+}
+
+NumInput.defaultProps = {
+  min: 0,
+  max: 0,
+  step: 1,
+  val: 0,
+  label: '',
+  type: 'range'
+}
 
 export default App;
